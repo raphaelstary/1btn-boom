@@ -1,4 +1,4 @@
-G.installMyScenes = (function (Scenes, Width, Height) {
+G.installMyScenes = (function (Scenes, Game) {
     "use strict";
 
     function installMyScenes(sceneServices) {
@@ -7,12 +7,13 @@ G.installMyScenes = (function (Scenes, Width, Height) {
         var scenes = new Scenes();
 
         scenes.add(function (next) {
-            var stage = sceneServices.stage;
-            stage.createText('Hello World :)').setPosition(Width.HALF, Height.HALF);
+            var game = new Game(sceneServices, sceneServices.maps['map_test']);
+            game.postConstruct();
+
         });
 
         return scenes;
     }
 
     return installMyScenes;
-})(H5.Scenes, H5.Width, H5.Height);
+})(H5.Scenes, G.Game);
