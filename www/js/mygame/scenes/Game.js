@@ -1,4 +1,4 @@
-G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wrap, Event) {
+G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wrap, Event, ScreenShaker) {
     "use strict";
 
     function Game(services, map) {
@@ -54,8 +54,9 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
             self.nextScene({});
         }
 
+        this.shaker = new ScreenShaker(this.device);
         this.world = PlayFactory.createWorld(this.stage, this.timer, this.device, this.map, wrap(0), wrap(0), endMap,
-            this.__pause.bind(this), this.__resume.bind(this));
+            this.__pause.bind(this), this.__resume.bind(this), this.shaker);
 
         this.world.init(function () {
             if (self.__itIsOver)
@@ -69,6 +70,8 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
 
         this.keyBoardHandler = installPlayerKeyBoard(this.events, this.playerController);
         this.gamePadHandler = installPlayerGamePad(this.events, this.playerController);
+        this.shakerResizeId = this.events.subscribe(Event.RESIZE, this.shaker.resize.bind(this.shaker));
+        this.shakerTickId = this.events.subscribe(Event.TICK_MOVE, this.shaker.update.bind(this.shaker));
         this.__worldTick = this.events.subscribe(Event.TICK_MOVE, this.world.update.bind(this.world));
     };
 
@@ -76,8 +79,10 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         this.events.unsubscribe(this.keyBoardHandler);
         this.events.unsubscribe(this.gamePadHandler);
         this.events.unsubscribe(this.__worldTick);
+        this.events.unsubscribe(this.shakerResizeId);
+        this.events.unsubscribe(this.shakerTickId);
         this.world.preDestroy();
     };
 
     return Game;
-})(G.PlayFactory, G.installPlayerKeyBoard, G.installPlayerGamePad, H5.wrap, H5.Event);
+})(G.PlayFactory, G.installPlayerKeyBoard, G.installPlayerGamePad, H5.wrap, H5.Event, H5.ScreenShaker);

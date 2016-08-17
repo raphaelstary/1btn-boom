@@ -34,6 +34,13 @@ G.World = (function (Tile, iterateEntries) {
         this.player = this.domainGridHelper.getPlayer();
         this.player.direction = Direction.UP;
 
+        this.playerRespawn = {
+            u: this.player.u,
+            v: this.player.v,
+            type: this.player.type,
+            direction: this.player.direction
+        };
+
         var walls = this.domainGridHelper.getWalls();
         var backgroundTiles = this.domainGridHelper.getBackgroundTiles();
         this.worldView.drawLevel(this.player, walls, backgroundTiles, callback);
@@ -103,13 +110,25 @@ G.World = (function (Tile, iterateEntries) {
     };
 
     World.prototype.__move = function (player, u, v, callback) {
+        var self = this;
+
         var canMove = this.domainGridHelper.canPlayerMove(player, u, v);
-        if (!canMove)
+        if (!canMove) {
+            this.worldView.remove(function () {
+                self.domainGridHelper.remove(self.player);
+                self.player = {
+                    u: self.playerRespawn.u,
+                    v: self.playerRespawn.v,
+                    type: self.playerRespawn.type,
+                    direction: self.playerRespawn.direction
+                };
+                self.domainGridHelper.add(self.player);
+                self.worldView.add(self.player, callback);
+            });
             return false;
+        }
 
         delete this.__conveyorBelt[player.type];
-
-        var self = this;
 
         function postMove() {
             var belt = self.domainGridHelper.isOnBelt(self.player);

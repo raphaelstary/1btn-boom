@@ -56,12 +56,12 @@ G.DomainGridHelper = (function (Tile, Strings) {
         return false;
     };
 
-    DomainGridHelper.prototype.remove = function (npc) {
-        this.grid.set(npc.u, npc.v, Tile.EMPTY);
+    DomainGridHelper.prototype.remove = function (entity) {
+        this.grid.set(entity.u, entity.v, Tile.EMPTY);
     };
 
-    DomainGridHelper.prototype.add = function (npc) {
-        this.grid.set(npc.u, npc.v, npc.type);
+    DomainGridHelper.prototype.add = function (entity) {
+        this.grid.set(entity.u, entity.v, entity.type);
     };
 
     return DomainGridHelper;
