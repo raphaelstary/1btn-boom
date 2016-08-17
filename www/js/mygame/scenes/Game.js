@@ -1,4 +1,4 @@
-G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wrap) {
+G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wrap, Event) {
     "use strict";
 
     function Game(services, map) {
@@ -69,13 +69,15 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
 
         this.keyBoardHandler = installPlayerKeyBoard(this.events, this.playerController);
         this.gamePadHandler = installPlayerGamePad(this.events, this.playerController);
+        this.__worldTick = this.events.subscribe(Event.TICK_MOVE, this.world.update.bind(this.world));
     };
 
     Game.prototype.preDestroy = function () {
         this.events.unsubscribe(this.keyBoardHandler);
         this.events.unsubscribe(this.gamePadHandler);
+        this.events.unsubscribe(this.__worldTick);
         this.world.preDestroy();
     };
 
     return Game;
-})(G.PlayFactory, G.installPlayerKeyBoard, G.installPlayerGamePad, H5.wrap);
+})(G.PlayFactory, G.installPlayerKeyBoard, G.installPlayerGamePad, H5.wrap, H5.Event);

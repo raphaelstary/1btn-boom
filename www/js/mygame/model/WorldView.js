@@ -1,4 +1,4 @@
-G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCounter) {
+G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCounter, Tile) {
     "use strict";
 
     function WorldView(stage, timer, gridViewHelper) {
@@ -52,7 +52,17 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
         }, this);
 
         backgroundTiles.forEach(function (tile) {
-            this.staticTiles.push(dropIn(this.__createStatic(tile, Image.FLOOR, 0)));
+            var img = Image.FLOOR;
+            if (tile.type == Tile.BELT_UP) {
+                img = Image.BELT_UP;
+            } else if (tile.type == Tile.BELT_DOWN) {
+                img = Image.BELT_DOWN;
+            } else if (tile.type == Tile.BELT_LEFT) {
+                img = Image.BELT_LEFT;
+            } else if (tile.type == Tile.BELT_RIGHT) {
+                img = Image.BELT_RIGHT;
+            }
+            this.staticTiles.push(dropIn(this.__createStatic(tile, img, 0)));
         }, this);
     };
 
@@ -70,4 +80,4 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
     };
 
     return WorldView;
-})(H5.Transition, H5.wrap, G.Image, H5.Height, H5.changeSign, H5.CallbackCounter);
+})(H5.Transition, H5.wrap, G.Image, H5.Height, H5.changeSign, H5.CallbackCounter, G.Tile);

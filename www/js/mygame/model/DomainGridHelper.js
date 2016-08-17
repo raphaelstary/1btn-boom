@@ -48,9 +48,9 @@ G.DomainGridHelper = (function (Tile, Strings) {
         return change;
     };
 
-    DomainGridHelper.prototype.isPlayerOnEvent = function (entity) {
-        var tile = this.grid.getEvent(entity.u, entity.v);
-        if (tile && Strings.startsWidth(tile, Tile.EVENT)) {
+    DomainGridHelper.prototype.isOnBelt = function (entity) {
+        var tile = this.grid.getBackground(entity.u, entity.v);
+        if (tile && Strings.startsWidth(tile, Tile.BELT)) {
             return tile;
         }
         return false;
