@@ -94,7 +94,9 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
     };
 
     WorldView.prototype.__createEntity = function (tile, img) {
-        return this.gridViewHelper.create(tile.u, tile.v, img, this.defaultDrawable.data.height);
+        var drawable = this.gridViewHelper.create(tile.u, tile.v, img, this.defaultDrawable.data.height);
+        tile.drawable = drawable;
+        return drawable;
     };
 
     WorldView.prototype.__createStatic = function (tile, img, zIndex) {
@@ -144,12 +146,12 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
                     return;
                 }
                 self.shaker.add(drawable);
+                if (callback)
+                    callback();
             }
 
             function afterDropIn() {
                 self.timer.doLater(addLater, 10);
-                if (callback)
-                    callback();
             }
 
             drawable.show = false;

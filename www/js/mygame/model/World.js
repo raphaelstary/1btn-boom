@@ -33,6 +33,7 @@ G.World = (function (Tile, iterateEntries) {
     World.prototype.init = function (callback) {
         this.player = this.domainGridHelper.getPlayer();
         this.player.direction = Direction.UP;
+        this.player.isDead = false;
 
         this.playerRespawn = {
             u: this.player.u,
@@ -47,6 +48,9 @@ G.World = (function (Tile, iterateEntries) {
     };
 
     World.prototype.turnLeft = function (callback) {
+        if (this.player.isDead || !this.player.drawable.show)
+            return false;
+
         var direction = this.player.direction;
         if (direction == Direction.UP) {
             this.player.direction = Direction.LEFT;
@@ -60,9 +64,13 @@ G.World = (function (Tile, iterateEntries) {
             throw 'internal error: unhandled code branch';
         }
         this.worldView.turnLeft(callback);
+        return true;
     };
 
     World.prototype.turnRight = function (callback) {
+        if (this.player.isDead || !this.player.drawable.show)
+            return false;
+
         var direction = this.player.direction;
         if (direction == Direction.UP) {
             this.player.direction = Direction.RIGHT;
@@ -76,6 +84,7 @@ G.World = (function (Tile, iterateEntries) {
             throw 'internal error: unhandled code branch';
         }
         this.worldView.turnRight(callback);
+        return true;
     };
 
     World.prototype.move = function (callback) {
@@ -110,32 +119,37 @@ G.World = (function (Tile, iterateEntries) {
     };
 
     World.prototype.__move = function (player, u, v, callback) {
+        if (player.isDead || !player.drawable.show)
+            return false;
+
         var self = this;
 
         var canMove = this.domainGridHelper.canPlayerMove(player, u, v);
         if (!canMove) {
+            player.isDead = true;
             this.worldView.remove(function () {
-                self.domainGridHelper.remove(self.player);
-                self.player = {
+                self.domainGridHelper.remove(player);
+                var newPlayer = self.player = {
                     u: self.playerRespawn.u,
                     v: self.playerRespawn.v,
                     type: self.playerRespawn.type,
-                    direction: self.playerRespawn.direction
+                    direction: self.playerRespawn.direction,
+                    isDead: false
                 };
-                self.domainGridHelper.add(self.player);
-                self.worldView.add(self.player, callback);
+                self.domainGridHelper.add(newPlayer);
+                self.worldView.add(newPlayer, callback);
             });
-            return false;
+            return true;
         }
 
         delete this.__conveyorBelt[player.type];
 
         function postMove() {
-            var belt = self.domainGridHelper.isOnBelt(self.player);
+            var belt = self.domainGridHelper.isOnBelt(player);
             if (belt) {
-                self.__conveyorBelt[self.player.type] = {
+                self.__conveyorBelt[player.type] = {
                     type: belt,
-                    entity: self.player
+                    entity: player
                 }
             }
             if (callback)
@@ -152,7 +166,10 @@ G.World = (function (Tile, iterateEntries) {
 
     World.prototype.__moveBelts = function () {
         iterateEntries(this.__conveyorBelt, function (elem, key) {
-
+            if (elem.entity.isDead) {
+                delete this.__conveyorBelt[key];
+                return;
+            }
             if (elem.type == Tile.BELT_UP) {
                 delete this.__conveyorBelt[key];
                 this.moveTop();
