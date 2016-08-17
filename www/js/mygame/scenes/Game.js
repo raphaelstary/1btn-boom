@@ -55,7 +55,7 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         }
 
         this.shaker = new ScreenShaker(this.device);
-        this.world = PlayFactory.createWorld(this.stage, this.timer, this.device, this.map, wrap(0), wrap(0), endMap,
+        this.world = PlayFactory.createWorld(this.stage, this.timer, this.device, this.map, 0, 0, endMap,
             this.__pause.bind(this), this.__resume.bind(this), this.shaker);
 
         this.world.init(function () {

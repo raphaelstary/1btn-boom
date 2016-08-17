@@ -10,7 +10,7 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
         this.player = null;
         this.staticTiles = [];
 
-        this.moveSpeed = 10;
+        this.moveSpeed = 8;
         this.dropInSpeed = 30;
     }
 
@@ -94,13 +94,13 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
     };
 
     WorldView.prototype.__createEntity = function (tile, img) {
-        var drawable = this.gridViewHelper.create(tile.u, tile.v, img, this.defaultDrawable.data.height);
+        var drawable = this.gridViewHelper.create(tile.u, tile.v, img, 8);
         tile.drawable = drawable;
         return drawable;
     };
 
     WorldView.prototype.__createStatic = function (tile, img, zIndex) {
-        return this.gridViewHelper.createBackground(tile.u, tile.v, img, zIndex, this.defaultDrawable.data.height);
+        return this.gridViewHelper.createBackground(tile.u, tile.v, img, zIndex, 8);
     };
 
     WorldView.prototype.move = function (changeSet, callback) {
