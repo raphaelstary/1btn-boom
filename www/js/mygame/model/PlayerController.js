@@ -24,7 +24,7 @@ G.PlayerController = (function () {
         if (this.__paused || this.moving)
             return;
 
-        this.moving = this.world.moveTop(this.__myCallback.bind(this));
+        this.moving = this.world.move(this.__myCallback.bind(this));
     };
 
     return PlayerController;
