@@ -20,15 +20,10 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
         }
 
         removeElem(this.player);
-        removeElem(this.defaultDrawable);
         this.staticTiles.forEach(removeElem);
     };
 
     WorldView.prototype.drawLevel = function (player, walls, backgroundTiles, callback) {
-
-        this.defaultDrawable = this.gridViewHelper.create(1, 1, Image.FLOOR);
-        this.defaultDrawable.show = false;
-
         var spacing = Transition.EASE_IN_SIN;
         var yFn = changeSign(Height.HALF);
         var self = this;
@@ -94,13 +89,13 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
     };
 
     WorldView.prototype.__createEntity = function (tile, img) {
-        var drawable = this.gridViewHelper.create(tile.u, tile.v, img, 8);
+        var drawable = this.gridViewHelper.create(tile.u, tile.v, img);
         tile.drawable = drawable;
         return drawable;
     };
 
     WorldView.prototype.__createStatic = function (tile, img, zIndex) {
-        return this.gridViewHelper.createBackground(tile.u, tile.v, img, zIndex, 8);
+        return this.gridViewHelper.createBackground(tile.u, tile.v, img, zIndex);
     };
 
     WorldView.prototype.move = function (changeSet, callback) {
