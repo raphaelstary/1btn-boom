@@ -35,6 +35,8 @@ G.World = (function (Tile, iterateEntries) {
         this.player.direction = Direction.UP;
         this.player.isDead = false;
 
+        this.home = this.domainGridHelper.getHome();
+
         this.playerRespawn = {
             u: this.player.u,
             v: this.player.v,
@@ -44,7 +46,7 @@ G.World = (function (Tile, iterateEntries) {
 
         var walls = this.domainGridHelper.getWalls();
         var backgroundTiles = this.domainGridHelper.getBackgroundTiles();
-        this.worldView.drawLevel(this.player, walls, backgroundTiles, callback);
+        this.worldView.drawLevel(this.player, this.home, walls, backgroundTiles, callback);
     };
 
     World.prototype.turnLeft = function (callback) {

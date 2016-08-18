@@ -1,6 +1,7 @@
 G.Image = {
     FLOOR: 'floor',
     PLAYER: 'player',
+    HOME: 'home',
     WALL: 'wall',
     BELT_LEFT: 'belt-left',
     BELT_LEFT_TURN_LEFT: 'belt-left-turn-left',

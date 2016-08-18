@@ -7,7 +7,9 @@ G.DomainGridHelper = (function (Tile, Strings) {
     }
 
     DomainGridHelper.prototype.getBackgroundTiles = function () {
-        return this.gridHelper.getTiles(Tile.BACKGROUND, true);
+        var tiles = this.gridHelper.getTiles(Tile.BACKGROUND, true);
+        tiles.push.apply(tiles, this.gridHelper.getTiles(Tile.BELT, true));
+        return tiles;
     };
 
     DomainGridHelper.prototype.getWalls = function () {
@@ -16,6 +18,10 @@ G.DomainGridHelper = (function (Tile, Strings) {
 
     DomainGridHelper.prototype.getPlayer = function () {
         return this.gridHelper.getTiles(Tile.PLAYER)[0];
+    };
+
+    DomainGridHelper.prototype.getHome = function () {
+        return this.gridHelper.getTiles(Tile.HOME)[0];
     };
 
     DomainGridHelper.prototype.canPlayerMove = function (player, u, v) {
@@ -31,7 +37,8 @@ G.DomainGridHelper = (function (Tile, Strings) {
     };
 
     DomainGridHelper.prototype.__isTypeMovable = function (backgroundTileType) {
-        return backgroundTileType && Strings.startsWidth(backgroundTileType, Tile.BACKGROUND);
+        return backgroundTileType && (Strings.startsWidth(backgroundTileType, Tile.BACKGROUND) ||
+            Strings.startsWidth(backgroundTileType, Tile.BELT));
     };
 
     DomainGridHelper.prototype.movePlayer = function (player, u, v) {
