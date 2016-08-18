@@ -6,7 +6,7 @@ G.PlayFactory = (function (Grid, GridHelper, FixRezGridViewHelper, DomainGridHel
         createWorld: function (stage, timer, device, level, topOffset, bottomOffset, endMap, pause, resume, shaker) {
             var grid = new Grid(level);
             var gridHelper = new GridHelper(grid, grid.xTiles, grid.yTiles);
-            var gridViewHelper = new FixRezGridViewHelper(stage, 256, 256, grid.xTiles, grid.yTiles, topOffset, bottomOffset);
+            var gridViewHelper = new FixRezGridViewHelper(stage, grid.xTiles, grid.yTiles, 8, topOffset, bottomOffset);
             var domainGridHelper = new DomainGridHelper(gridHelper, grid);
             var worldView = new WorldView(stage, timer, gridViewHelper, shaker);
             return new World(worldView, domainGridHelper, endMap, pause, resume);

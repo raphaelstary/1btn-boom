@@ -1,4 +1,4 @@
-G.MyGameResources = (function (AtlasResourceHelper, DeviceInfo, userAgent, resolveAtlasPaths, File, width, height,
+G.MyGameResources = (function (AtlasResourceHelper, DeviceInfo, userAgent, resolveAtlasPaths, File,
     addFontToDOM, URL, UI) {
     "use strict";
 
@@ -29,7 +29,7 @@ G.MyGameResources = (function (AtlasResourceHelper, DeviceInfo, userAgent, resol
 
         return {
             // services created with downloaded files
-            gfxCache: AtlasResourceHelper.process(atlases, width, height), // scenes: scenes,
+            gfxCache: AtlasResourceHelper.processLowRez(atlases, 256, 256), // scenes: scenes,
             maps: maps
         };
     }
@@ -38,5 +38,5 @@ G.MyGameResources = (function (AtlasResourceHelper, DeviceInfo, userAgent, resol
         create: registerFiles,
         process: processFiles
     };
-})(H5.AtlasResourceHelper, H5.Device, window.navigator.userAgent, G.resolveAtlasPaths, G.File, window.innerWidth,
-    window.innerHeight, H5.addFontToDOM, window.URL || window.webkitURL, G.UI);
+})(H5.AtlasResourceHelper, H5.Device, window.navigator.userAgent, G.resolveAtlasPaths, G.File, H5.addFontToDOM,
+    window.URL || window.webkitURL, G.UI);
