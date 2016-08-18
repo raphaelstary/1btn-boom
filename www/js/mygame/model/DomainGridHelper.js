@@ -1,4 +1,4 @@
-G.DomainGridHelper = (function (Tile, Strings) {
+G.DomainGridHelper = (function (Tile, Strings, Direction) {
     "use strict";
 
     function DomainGridHelper(gridHelper, grid) {
@@ -71,5 +71,20 @@ G.DomainGridHelper = (function (Tile, Strings) {
         this.grid.set(entity.u, entity.v, entity.type);
     };
 
+    DomainGridHelper.prototype.getNeighbor = function (player) {
+        var direction = player.direction;
+        if (direction == Direction.UP) {
+            return this.gridHelper.getTopNeighbor(player.u, player.v);
+        } else if (direction == Direction.DOWN) {
+            return this.gridHelper.getBottomNeighbor(player.u, player.v);
+        } else if (direction == Direction.LEFT) {
+            return this.gridHelper.getLeftNeighbor(player.u, player.v);
+        } else if (direction == Direction.RIGHT) {
+            return this.gridHelper.getRightNeighbor(player.u, player.v);
+        } else {
+            throw 'internal error: unhandled code branch';
+        }
+    };
+
     return DomainGridHelper;
-})(G.Tile, H5.Strings);
+})(G.Tile, H5.Strings, G.Direction);

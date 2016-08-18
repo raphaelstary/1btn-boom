@@ -1,4 +1,4 @@
-G.World = (function (Tile, iterateEntries) {
+G.World = (function (Tile, iterateEntries, Direction) {
     "use strict";
 
     function World(worldView, domainGridHelper, endMap, pause, resume) {
@@ -11,6 +11,8 @@ G.World = (function (Tile, iterateEntries) {
 
         this.__ticker = 0;
         this.__conveyorBelt = {};
+
+        this.lives = 3;
     }
 
     World.prototype.update = function () {
@@ -21,13 +23,6 @@ G.World = (function (Tile, iterateEntries) {
             this.__ticker = 0;
         }
         this.__ticker++;
-    };
-
-    var Direction = {
-        UP: 'up',
-        DOWN: 'down',
-        LEFT: 'left',
-        RIGHT: 'right'
     };
 
     World.prototype.init = function (callback) {
@@ -128,8 +123,18 @@ G.World = (function (Tile, iterateEntries) {
 
         var canMove = this.domainGridHelper.canPlayerMove(player, u, v);
         if (!canMove) {
+            var isAttack = false;
+            var hitPromise;
             player.isDead = true;
             this.worldView.remove(function () {
+                if (isAttack && self.lives <= 0) {
+                    if (hitPromise.isOver) {
+                        self.__endMap();
+                    } else {
+                        hitPromise.callback = self.__endMap;
+                    }
+                    return;
+                }
                 self.domainGridHelper.remove(player);
                 var newPlayer = self.player = {
                     u: self.playerRespawn.u,
@@ -141,6 +146,14 @@ G.World = (function (Tile, iterateEntries) {
                 self.domainGridHelper.add(newPlayer);
                 self.worldView.add(newPlayer, callback);
             });
+
+            var neighbor = this.domainGridHelper.getNeighbor(player);
+            if (neighbor.type[0] == Tile.HOME) {
+                isAttack = true;
+                this.lives--;
+                hitPromise = this.worldView.hit();
+            }
+
             return true;
         }
 
@@ -225,4 +238,4 @@ G.World = (function (Tile, iterateEntries) {
     };
 
     return World;
-})(G.Tile, H5.iterateEntries);
+})(G.Tile, H5.iterateEntries, G.Direction);

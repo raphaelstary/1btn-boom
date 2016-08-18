@@ -1,4 +1,4 @@
-G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCounter, Tile, Math) {
+G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCounter, Tile, Math, HitView) {
     "use strict";
 
     function WorldView(stage, timer, gridViewHelper, screenShaker) {
@@ -172,5 +172,10 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
         this.timer.doLater(callback, 10);
     };
 
+    WorldView.prototype.hit = function () {
+        var hitView = new HitView(this.stage, this.timer, this.home, this.shaker);
+        return hitView.hit();
+    };
+
     return WorldView;
-})(H5.Transition, H5.wrap, G.Image, H5.Height, H5.changeSign, H5.CallbackCounter, G.Tile, Math);
+})(H5.Transition, H5.wrap, G.Image, H5.Height, H5.changeSign, H5.CallbackCounter, G.Tile, Math, G.HitView);
