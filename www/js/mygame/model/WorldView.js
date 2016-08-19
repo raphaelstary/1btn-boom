@@ -1,54 +1,53 @@
-G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCounter, Tile, Math, HitView) {
+G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, HitView) {
     "use strict";
 
-    function WorldView(stage, timer, gridViewHelper, screenShaker) {
+    function WorldView(stage, timer, gridViewHelper, shake) {
         this.stage = stage;
         this.timer = timer;
         this.gridViewHelper = gridViewHelper;
-        this.shaker = screenShaker;
-
-        this.drawables = [];
+        this.__shake = shake;
 
         this.moveSpeed = 8;
         this.dropInSpeed = 30;
     }
 
-    WorldView.prototype.preDestroy = function () {
-        function removeElem(elem) {
-            elem.remove();
+    WorldView.prototype.preDestroy = function (tiles) {
+        function removeElem(tile) {
+            tile.entity.remove();
+            tile.drawable.remove();
         }
 
-        this.drawables.forEach(removeElem);
+        tiles.forEach(removeElem);
     };
 
     WorldView.prototype.drawLevel = function (players, homes, walls, backgroundTiles, callback) {
         var spacing = Transition.EASE_IN_SIN;
-        var yFn = changeSign(Height.HALF);
+        var yFn = wrap(-128);
         var self = this;
 
         var callbackCounter = new CallbackCounter(callback);
 
-        function dropIn(drawable) {
-            drawable.show = false;
+        function dropIn(pair) {
+            pair.drawable.show = false;
             self.timer.doLater(function () {
-                drawable.show = true;
-                drawable.moveFrom(wrap(drawable, 'x'), yFn, [drawable]).setDuration(self.dropInSpeed)
+                pair.drawable.show = true;
+                pair.entity.moveFrom(wrap(pair.entity, 'x'), yFn).setDuration(self.dropInSpeed)
                     .setSpacing(spacing).setCallback(callbackCounter.register());
             }, 1);
 
-            return drawable;
+            return pair;
         }
 
         players.forEach(function (player) {
-            this.drawables.push(dropIn(this.__createEntity(player, Image.PLAYER)));
+            dropIn(this.__createEntity(player, Image.PLAYER));
         }, this);
 
         homes.forEach(function (home) {
-            this.drawables.push(dropIn(this.__createEntity(home, Image.HOME)));
+            dropIn(this.__createEntity(home, Image.HOME));
         }, this);
 
         walls.forEach(function (wall) {
-            this.drawables.push(dropIn(this.__createEntity(wall, Image.WALL)));
+            dropIn(this.__createEntity(wall, Image.WALL));
         }, this);
 
         backgroundTiles.forEach(function (tile) {
@@ -82,27 +81,39 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
             } else if (tile.type == Tile.BELT_TURN_LEFT) {
                 img = Image.BELT_TURN_LEFT;
             }
-            this.drawables.push(dropIn(this.__createStatic(tile, img, 0)));
-        }, this);
-
-        this.drawables.forEach(function (drawable) {
-            this.shaker.add(drawable);
+            dropIn(this.__createStatic(tile, img, 0));
         }, this);
     };
 
     WorldView.prototype.__createEntity = function (tile, img) {
+        var entity = this.gridViewHelper.create(tile.u, tile.v, img);
+        entity.setRotation(0);
+        tile.entity = entity;
+        entity.show = false;
+
         var drawable = this.gridViewHelper.create(tile.u, tile.v, img);
         drawable.setRotation(0);
         tile.drawable = drawable;
-        return drawable;
+        return {
+            entity: entity,
+            drawable: drawable
+        };
     };
 
     WorldView.prototype.__createStatic = function (tile, img, zIndex) {
-        return this.gridViewHelper.createBackground(tile.u, tile.v, img, zIndex);
+        var entity = this.gridViewHelper.createBackground(tile.u, tile.v, img, zIndex);
+        tile.entity = entity;
+        entity.show = false;
+        var drawable = this.gridViewHelper.createBackground(tile.u, tile.v, img, zIndex);
+        tile.drawable = drawable;
+        return {
+            entity: entity,
+            drawable: drawable
+        }
     };
 
     WorldView.prototype.move = function (entity, callback) {
-        var path = this.gridViewHelper.move(entity.drawable, entity.u, entity.v, this.moveSpeed, callback);
+        var path = this.gridViewHelper.move(entity.entity, entity.u, entity.v, this.moveSpeed, callback);
         path.setSpacing(Transition.EASE_OUT_EXPO);
     };
 
@@ -119,11 +130,10 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
             .setDuration(this.moveSpeed);
     };
 
-    WorldView.prototype.remove = function (drawable, callback) {
-        var self = this;
-        this.explode(drawable, function () {
-            self.shaker.remove(drawable);
-            drawable.remove();
+    WorldView.prototype.remove = function (entity, callback) {
+        this.explode(entity.drawable, function () {
+            entity.entity.remove();
+            entity.drawable.remove();
             if (callback)
                 callback();
         });
@@ -131,48 +141,33 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
 
     WorldView.prototype.add = function (entity, callback) {
         var spacing = Transition.EASE_IN_SIN;
-        var yFn = changeSign(Height.HALF);
+        var yFn = wrap(-128);
         var self = this;
 
-        function dropIn(drawable) {
-
-            function addLater() {
-                if (self.shaker.shaking) {
-                    self.timer.doLater(addLater, 10);
-                    return;
-                }
-                self.shaker.add(drawable);
-                if (callback)
-                    callback();
-            }
-
-            function afterDropIn() {
-                self.timer.doLater(addLater, 10);
-            }
-
-            drawable.show = false;
+        function dropIn(pair) {
+            pair.drawable.show = false;
             self.timer.doLater(function () {
-                drawable.show = true;
-                drawable.moveFrom(wrap(drawable, 'x'), yFn, [drawable]).setDuration(self.dropInSpeed)
-                    .setSpacing(spacing).setCallback(afterDropIn);
+                pair.drawable.show = true;
+                pair.entity.moveFrom(wrap(pair.entity, 'x'), yFn).setDuration(self.dropInSpeed)
+                    .setSpacing(spacing).setCallback(callback);
             }, 1);
 
-            return drawable;
+            return pair;
         }
 
         dropIn(this.__createEntity(entity, Image.PLAYER));
     };
 
-    WorldView.prototype.explode = function (entity, callback) {
-        // entity.drawable.animate(Image.EXPLOSION, Image.EXPLOSION_FRAMES, false).setCallback(callback);
-        this.shaker.startBigShake();
+    WorldView.prototype.explode = function (drawable, callback) {
+        // drawable.animate(Image.EXPLOSION, Image.EXPLOSION_FRAMES, false).setCallback(callback);
+        this.__shake();
         this.timer.doLater(callback, 10);
     };
 
     WorldView.prototype.hit = function (drawable) {
-        var hitView = new HitView(this.stage, this.timer, drawable, this.shaker);
+        var hitView = new HitView(this.stage, this.timer, drawable);
         return hitView.hit();
     };
 
     return WorldView;
-})(H5.Transition, H5.wrap, G.Image, H5.Height, H5.changeSign, H5.CallbackCounter, G.Tile, Math, G.HitView);
+})(H5.Transition, H5.wrap, G.Image, H5.CallbackCounter, G.Tile, Math, G.HitView);

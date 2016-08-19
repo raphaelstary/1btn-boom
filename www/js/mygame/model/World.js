@@ -1,7 +1,7 @@
 G.World = (function (Tile, iterateEntries, Direction) {
     "use strict";
 
-    function World(worldView, domainGridHelper, endMap, pause, resume, players) {
+    function World(worldView, domainGridHelper, endMap, pause, resume, players, camera) {
         this.worldView = worldView;
         this.domainGridHelper = domainGridHelper;
 
@@ -13,6 +13,7 @@ G.World = (function (Tile, iterateEntries, Direction) {
         this.__conveyorBelt = {};
 
         this.__players = players;
+        this.camera = camera;
     }
 
     World.prototype.update = function () {
@@ -23,6 +24,12 @@ G.World = (function (Tile, iterateEntries, Direction) {
             this.__ticker = 0;
         }
         this.__ticker++;
+    };
+
+    World.prototype.updateCamera = function () {
+        this.tiles.forEach(function (tile) {
+            this.camera.calcScreenPosition(tile.entity, tile.drawable);
+        }, this);
     };
 
     World.prototype.init = function (callback) {
@@ -46,6 +53,12 @@ G.World = (function (Tile, iterateEntries, Direction) {
 
         var walls = this.domainGridHelper.getWalls();
         var backgroundTiles = this.domainGridHelper.getBackgroundTiles();
+
+        this.tiles = [];
+        this.tiles.push.apply(this.tiles, players);
+        this.tiles.push.apply(this.tiles, homes);
+        this.tiles.push.apply(this.tiles, walls);
+        this.tiles.push.apply(this.tiles, backgroundTiles);
 
         this.worldView.drawLevel(players, homes, walls, backgroundTiles, callback);
     };
@@ -197,7 +210,7 @@ G.World = (function (Tile, iterateEntries, Direction) {
     World.prototype.__remove = function (player, callback) {
         player.isDead = true;
         this.domainGridHelper.remove(player);
-        this.worldView.remove(player.drawable, this.__respawn.bind(this, player, callback));
+        this.worldView.remove(player, this.__respawn.bind(this, player, callback));
     };
 
     World.prototype.__moveBelts = function () {

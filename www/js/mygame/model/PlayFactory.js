@@ -3,14 +3,14 @@ G.PlayFactory = (function (Grid, GridHelper, FixRezGridViewHelper, DomainGridHel
     "use strict";
 
     return {
-        createWorld: function (stage, timer, device, level, topOffset, bottomOffset, endMap, pause, resume, shaker,
-            players) {
+        createWorld: function (stage, timer, device, level, topOffset, bottomOffset, endMap, pause, resume, shake,
+            players, camera) {
             var grid = new Grid(level);
             var gridHelper = new GridHelper(grid, grid.xTiles, grid.yTiles);
             var gridViewHelper = new FixRezGridViewHelper(stage, grid.xTiles, grid.yTiles, 8, topOffset, bottomOffset);
             var domainGridHelper = new DomainGridHelper(gridHelper, grid);
-            var worldView = new WorldView(stage, timer, gridViewHelper, shaker);
-            return new World(worldView, domainGridHelper, endMap, pause, resume, players);
+            var worldView = new WorldView(stage, timer, gridViewHelper, shake);
+            return new World(worldView, domainGridHelper, endMap, pause, resume, players, camera);
         },
         createPlayerController: function (world, player) {
             return new PlayerController(world, player, world.players[player.tileType]);

@@ -1,4 +1,5 @@
-G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wrap, Event, ScreenShaker) {
+G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wrap, Event, ScreenShaker, Camera,
+    createViewPort) {
     "use strict";
 
     function Game(services, map) {
@@ -72,8 +73,14 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
                 color: 'blue'
             }
         ];
+        var viewPort = createViewPort(this.stage);
+        var camera = new Camera(viewPort);
+        this.shaker.add(viewPort);
+        function shake() {
+            self.shaker.startBigShake();
+        }
         this.world = PlayFactory.createWorld(this.stage, this.timer, this.device, this.map, 0, 0, endMap,
-            this.__pause.bind(this), this.__resume.bind(this), this.shaker, players);
+            this.__pause.bind(this), this.__resume.bind(this), shake, players, camera);
 
         this.world.init(function () {
             if (self.__itIsOver)
@@ -85,6 +92,7 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         this.playerControllers = players.map(toController, this);
         this.__pause();
 
+        this.cameraListener = this.events.subscribe(Event.TICK_CAMERA, this.world.updateCamera.bind(this.world));
         this.inputHandlerTickIds = this.playerControllers.map(installInput, this);
         this.shakerTickId = this.events.subscribe(Event.TICK_MOVE, this.shaker.update.bind(this.shaker));
         this.__worldTick = this.events.subscribe(Event.TICK_MOVE, this.world.update.bind(this.world));
@@ -94,6 +102,7 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         this.inputHandlerTickIds.forEach(function (id) {
             this.events.unsubscribe(id);
         }, this);
+        this.events.unsubscribe(this.cameraListener);
         this.events.unsubscribe(this.__worldTick);
         this.events.unsubscribe(this.shakerTickId);
         this.world.preDestroy();
@@ -115,4 +124,5 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
     }
 
     return Game;
-})(G.PlayFactory, G.installPlayerKeyBoard, G.installPlayerGamePad, H5.wrap, H5.Event, H5.FixRezScreenShaker);
+})(G.PlayFactory, G.installPlayerKeyBoard, G.installPlayerGamePad, H5.wrap, H5.Event, H5.FixRezScreenShaker, G.Camera,
+    G.createViewPort);

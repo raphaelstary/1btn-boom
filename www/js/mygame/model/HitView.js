@@ -3,11 +3,10 @@ G.HitView = (function (wrap, Transition, Image) {
 
     var Z_INDEX = 6;
 
-    function HitView(stage, timer, drawable, shaker) {
+    function HitView(stage, timer, drawable) {
         this.stage = stage;
         this.timer = timer;
         this.drawable = drawable;
-        this.shaker = shaker;
         this.fadeInSpeed = 2;
         this.fadeOutSpeed = 4;
     }
@@ -17,9 +16,6 @@ G.HitView = (function (wrap, Transition, Image) {
             .setPosition(wrap(this.drawable.x), wrap(this.drawable.y)).setZIndex(Z_INDEX);
         var black = this.stage.createImage(Image.BLACK)
             .setPosition(wrap(this.drawable.x), wrap(this.drawable.y)).setZIndex(Z_INDEX + 1).setAlpha(0);
-
-        this.shaker.add(white);
-        this.shaker.add(black);
 
         black.opacityPattern([
             {
@@ -33,12 +29,9 @@ G.HitView = (function (wrap, Transition, Image) {
             }
         ], true);
 
-        var self = this;
         this.timer.doLater(function () {
             white.remove();
             black.remove();
-            self.shaker.remove(white);
-            self.shaker.remove(black);
             if (callback)
                 callback();
         }, 30);
