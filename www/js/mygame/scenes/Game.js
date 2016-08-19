@@ -86,7 +86,6 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         this.__pause();
 
         this.inputHandlerTickIds = this.playerControllers.map(installInput, this);
-        this.shakerResizeId = this.events.subscribe(Event.RESIZE, this.shaker.resize.bind(this.shaker));
         this.shakerTickId = this.events.subscribe(Event.TICK_MOVE, this.shaker.update.bind(this.shaker));
         this.__worldTick = this.events.subscribe(Event.TICK_MOVE, this.world.update.bind(this.world));
     };
@@ -96,7 +95,6 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
             this.events.unsubscribe(id);
         }, this);
         this.events.unsubscribe(this.__worldTick);
-        this.events.unsubscribe(this.shakerResizeId);
         this.events.unsubscribe(this.shakerTickId);
         this.world.preDestroy();
     };
@@ -117,4 +115,4 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
     }
 
     return Game;
-})(G.PlayFactory, G.installPlayerKeyBoard, G.installPlayerGamePad, H5.wrap, H5.Event, H5.ScreenShaker);
+})(G.PlayFactory, G.installPlayerKeyBoard, G.installPlayerGamePad, H5.wrap, H5.Event, H5.FixRezScreenShaker);
