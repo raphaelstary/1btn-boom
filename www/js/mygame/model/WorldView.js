@@ -7,7 +7,7 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
         this.gridViewHelper = gridViewHelper;
         this.shaker = screenShaker;
 
-        this.staticTiles = [];
+        this.drawables = [];
 
         this.moveSpeed = 8;
         this.dropInSpeed = 30;
@@ -18,12 +18,10 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
             elem.remove();
         }
 
-        removeElem(this.player);
-        removeElem(this.home);
-        this.staticTiles.forEach(removeElem);
+        this.drawables.forEach(removeElem);
     };
 
-    WorldView.prototype.drawLevel = function (player, home, walls, backgroundTiles, callback) {
+    WorldView.prototype.drawLevel = function (players, homes, walls, backgroundTiles, callback) {
         var spacing = Transition.EASE_IN_SIN;
         var yFn = changeSign(Height.HALF);
         var self = this;
@@ -41,13 +39,16 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
             return drawable;
         }
 
-        this.player = dropIn(this.__createEntity(player, Image.PLAYER));
-        this.player.setRotation(0);
+        players.forEach(function (player) {
+            this.drawables.push(dropIn(this.__createEntity(player, Image.PLAYER)));
+        }, this);
 
-        this.home = dropIn(this.__createEntity(home, Image.HOME));
+        homes.forEach(function (home) {
+            this.drawables.push(dropIn(this.__createEntity(home, Image.HOME)));
+        }, this);
 
         walls.forEach(function (wall) {
-            this.staticTiles.push(dropIn(this.__createEntity(wall, Image.WALL)));
+            this.drawables.push(dropIn(this.__createEntity(wall, Image.WALL)));
         }, this);
 
         backgroundTiles.forEach(function (tile) {
@@ -81,18 +82,17 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
             } else if (tile.type == Tile.BELT_TURN_LEFT) {
                 img = Image.BELT_TURN_LEFT;
             }
-            this.staticTiles.push(dropIn(this.__createStatic(tile, img, 0)));
+            this.drawables.push(dropIn(this.__createStatic(tile, img, 0)));
         }, this);
 
-        this.staticTiles.forEach(function (drawable) {
+        this.drawables.forEach(function (drawable) {
             this.shaker.add(drawable);
         }, this);
-        this.shaker.add(this.player);
-        this.shaker.add(this.home);
     };
 
     WorldView.prototype.__createEntity = function (tile, img) {
         var drawable = this.gridViewHelper.create(tile.u, tile.v, img);
+        drawable.setRotation(0);
         tile.drawable = drawable;
         return drawable;
     };
@@ -101,37 +101,35 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
         return this.gridViewHelper.createBackground(tile.u, tile.v, img, zIndex);
     };
 
-    WorldView.prototype.move = function (changeSet, callback) {
-        var path = this.gridViewHelper.move(this.player, changeSet.newU, changeSet.newV, this.moveSpeed, callback);
+    WorldView.prototype.move = function (entity, callback) {
+        var path = this.gridViewHelper.move(entity.drawable, entity.u, entity.v, this.moveSpeed, callback);
         path.setSpacing(Transition.EASE_OUT_EXPO);
     };
 
-    WorldView.prototype.turnLeft = function (callback) {
-        this.__turn(this.player, -Math.PI / 2, callback);
+    WorldView.prototype.turnLeft = function (drawable, callback) {
+        this.__turn(drawable, -Math.PI / 2, callback);
     };
 
-    WorldView.prototype.turnRight = function (callback) {
-        this.__turn(this.player, Math.PI / 2, callback);
+    WorldView.prototype.turnRight = function (drawable, callback) {
+        this.__turn(drawable, Math.PI / 2, callback);
     };
 
-    WorldView.prototype.__turn = function (entity, angle, callback) {
-        entity.rotateTo(entity.rotation + angle).setCallback(callback).setSpacing(Transition.EASE_OUT_EXPO)
+    WorldView.prototype.__turn = function (drawable, angle, callback) {
+        drawable.rotateTo(drawable.rotation + angle).setCallback(callback).setSpacing(Transition.EASE_OUT_EXPO)
             .setDuration(this.moveSpeed);
     };
 
-    WorldView.prototype.remove = function (callback) {
-        var entity = this.player;
-
+    WorldView.prototype.remove = function (drawable, callback) {
         var self = this;
-        this.explode(entity, function () {
-            self.shaker.remove(entity);
-            entity.remove();
+        this.explode(drawable, function () {
+            self.shaker.remove(drawable);
+            drawable.remove();
             if (callback)
                 callback();
         });
     };
 
-    WorldView.prototype.add = function (player, callback) {
+    WorldView.prototype.add = function (entity, callback) {
         var spacing = Transition.EASE_IN_SIN;
         var yFn = changeSign(Height.HALF);
         var self = this;
@@ -162,8 +160,7 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
             return drawable;
         }
 
-        this.player = dropIn(this.__createEntity(player, Image.PLAYER));
-        this.player.setRotation(0);
+        dropIn(this.__createEntity(entity, Image.PLAYER));
     };
 
     WorldView.prototype.explode = function (entity, callback) {
@@ -172,8 +169,8 @@ G.WorldView = (function (Transition, wrap, Image, Height, changeSign, CallbackCo
         this.timer.doLater(callback, 10);
     };
 
-    WorldView.prototype.hit = function () {
-        var hitView = new HitView(this.stage, this.timer, this.home, this.shaker);
+    WorldView.prototype.hit = function (drawable) {
+        var hitView = new HitView(this.stage, this.timer, drawable, this.shaker);
         return hitView.hit();
     };
 

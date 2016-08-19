@@ -1,11 +1,14 @@
 G.PlayerController = (function () {
     "use strict";
 
-    function PlayerController(world) {
+    function PlayerController(world, player, entity) {
         this.world = world;
 
         this.moving = false;
         this.__paused = false;
+
+        this.player = player;
+        this.entity = entity;
     }
 
     PlayerController.prototype.pause = function () {
@@ -24,7 +27,7 @@ G.PlayerController = (function () {
         if (this.__paused || this.moving)
             return;
 
-        this.moving = this.world.move(this.__myCallback.bind(this));
+        this.moving = this.world.move(this.entity, this.__myCallback.bind(this));
     };
 
     return PlayerController;

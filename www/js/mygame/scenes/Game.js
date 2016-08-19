@@ -27,14 +27,18 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
     Game.prototype.__pause = function () {
         if (this.__stop)
             return;
-        this.playerController.pause();
+        this.playerControllers.forEach(function (controller) {
+            controller.pause();
+        });
         this.__paused = true;
     };
 
     Game.prototype.__resume = function () {
         if (this.__stop)
             return;
-        this.playerController.resume();
+        this.playerControllers.forEach(function (controller) {
+            controller.resume();
+        });
         this.__paused = false;
     };
 
@@ -55,8 +59,21 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         }
 
         this.shaker = new ScreenShaker(this.device);
+        var players = [
+            {
+                key: 'gamepad1',
+                type: 'gamepad',
+                slot: 0,
+                color: 'pink'
+            }, {
+                key: 'gamepad2',
+                type: 'gamepad',
+                slot: 1,
+                color: 'blue'
+            }
+        ];
         this.world = PlayFactory.createWorld(this.stage, this.timer, this.device, this.map, 0, 0, endMap,
-            this.__pause.bind(this), this.__resume.bind(this), this.shaker);
+            this.__pause.bind(this), this.__resume.bind(this), this.shaker, players);
 
         this.world.init(function () {
             if (self.__itIsOver)
@@ -65,24 +82,39 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
             self.__resume();
         });
 
-        this.playerController = PlayFactory.createPlayerController(this.world);
+        this.playerControllers = players.map(toController, this);
         this.__pause();
 
-        this.keyBoardHandler = installPlayerKeyBoard(this.events, this.playerController);
-        this.gamePadHandler = installPlayerGamePad(this.events, this.playerController);
+        this.inputHandlerTickIds = this.playerControllers.map(installInput, this);
         this.shakerResizeId = this.events.subscribe(Event.RESIZE, this.shaker.resize.bind(this.shaker));
         this.shakerTickId = this.events.subscribe(Event.TICK_MOVE, this.shaker.update.bind(this.shaker));
         this.__worldTick = this.events.subscribe(Event.TICK_MOVE, this.world.update.bind(this.world));
     };
 
     Game.prototype.preDestroy = function () {
-        this.events.unsubscribe(this.keyBoardHandler);
-        this.events.unsubscribe(this.gamePadHandler);
+        this.inputHandlerTickIds.forEach(function (id) {
+            this.events.unsubscribe(id);
+        }, this);
         this.events.unsubscribe(this.__worldTick);
         this.events.unsubscribe(this.shakerResizeId);
         this.events.unsubscribe(this.shakerTickId);
         this.world.preDestroy();
     };
+
+    /** @this Game */
+    function toController(player) {
+        return PlayFactory.createPlayerController(this.world, player);
+    }
+
+    /** @this Game */
+    function installInput(controller) {
+        if (controller.player.type == 'gamepad') {
+            return installPlayerGamePad(this.events, controller);
+        }
+        if (controller.player.type == 'keyboard') {
+            return installPlayerKeyBoard(this.events, controller);
+        }
+    }
 
     return Game;
 })(G.PlayFactory, G.installPlayerKeyBoard, G.installPlayerGamePad, H5.wrap, H5.Event, H5.ScreenShaker);

@@ -16,12 +16,12 @@ G.DomainGridHelper = (function (Tile, Strings, Direction) {
         return this.gridHelper.getTiles(Tile.WALL);
     };
 
-    DomainGridHelper.prototype.getPlayer = function () {
-        return this.gridHelper.getTiles(Tile.PLAYER)[0];
+    DomainGridHelper.prototype.getPlayers = function () {
+        return this.gridHelper.getTiles(Tile.PLAYER);
     };
 
-    DomainGridHelper.prototype.getHome = function () {
-        return this.gridHelper.getTiles(Tile.HOME)[0];
+    DomainGridHelper.prototype.getHomes = function () {
+        return this.gridHelper.getTiles(Tile.HOME);
     };
 
     DomainGridHelper.prototype.canPlayerMove = function (player, u, v) {
@@ -44,15 +44,9 @@ G.DomainGridHelper = (function (Tile, Strings, Direction) {
     DomainGridHelper.prototype.movePlayer = function (player, u, v) {
         this.grid.set(player.u, player.v, Tile.EMPTY);
         this.grid.set(u, v, player.type);
-        var change = {
-            newU: u,
-            newV: v,
-            tile: player.type
-        };
+
         player.u = u;
         player.v = v;
-
-        return change;
     };
 
     DomainGridHelper.prototype.isOnBelt = function (entity) {

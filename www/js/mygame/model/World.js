@@ -1,7 +1,7 @@
 G.World = (function (Tile, iterateEntries, Direction) {
     "use strict";
 
-    function World(worldView, domainGridHelper, endMap, pause, resume) {
+    function World(worldView, domainGridHelper, endMap, pause, resume, players) {
         this.worldView = worldView;
         this.domainGridHelper = domainGridHelper;
 
@@ -12,7 +12,7 @@ G.World = (function (Tile, iterateEntries, Direction) {
         this.__ticker = 0;
         this.__conveyorBelt = {};
 
-        this.lives = 3;
+        this.__players = players;
     }
 
     World.prototype.update = function () {
@@ -26,93 +26,99 @@ G.World = (function (Tile, iterateEntries, Direction) {
     };
 
     World.prototype.init = function (callback) {
-        this.player = this.domainGridHelper.getPlayer();
-        this.player.direction = Direction.UP;
-        this.player.isDead = false;
+        var spawnTiles = this.domainGridHelper.getPlayers();
+        spawnTiles.filter(hasNoSlot, this).forEach(remove, this);
+        var players = spawnTiles.filter(hasSlot, this);
+        players.forEach(init);
+        players.forEach(setDirection);
+        players.forEach(function (player) {
+            this.__players.filter(isSame, player).forEach(function (playerControllerInfo) {
+                playerControllerInfo.tileType = player.type;
+            });
+        }, this);
 
-        this.home = this.domainGridHelper.getHome();
-
-        this.playerRespawn = {
-            u: this.player.u,
-            v: this.player.v,
-            type: this.player.type,
-            direction: this.player.direction
-        };
+        this.spawnPoints = players.reduce(toSpawnDict, {});
+        this.players = players.reduce(toDict, {});
+        var homeBaseTiles = this.domainGridHelper.getHomes();
+        homeBaseTiles.filter(hasNoSlot, this).forEach(remove, this);
+        var homes = homeBaseTiles.filter(hasSlot, this);
+        this.homes = homes.reduce(toHomeDict, {});
 
         var walls = this.domainGridHelper.getWalls();
         var backgroundTiles = this.domainGridHelper.getBackgroundTiles();
-        this.worldView.drawLevel(this.player, this.home, walls, backgroundTiles, callback);
+
+        this.worldView.drawLevel(players, homes, walls, backgroundTiles, callback);
     };
 
-    World.prototype.turnLeft = function (callback) {
-        if (this.player.isDead || !this.player.drawable.show)
+    World.prototype.turnLeft = function (player, callback) {
+        if (player.isDead || !player.drawable.show)
             return false;
 
-        var direction = this.player.direction;
+        var direction = player.direction;
         if (direction == Direction.UP) {
-            this.player.direction = Direction.LEFT;
+            player.direction = Direction.LEFT;
         } else if (direction == Direction.DOWN) {
-            this.player.direction = Direction.RIGHT;
+            player.direction = Direction.RIGHT;
         } else if (direction == Direction.LEFT) {
-            this.player.direction = Direction.DOWN;
+            player.direction = Direction.DOWN;
         } else if (direction == Direction.RIGHT) {
-            this.player.direction = Direction.UP;
+            player.direction = Direction.UP;
         } else {
             throw 'internal error: unhandled code branch';
         }
-        this.worldView.turnLeft(callback);
+        this.worldView.turnLeft(player.drawable, callback);
         return true;
     };
 
-    World.prototype.turnRight = function (callback) {
-        if (this.player.isDead || !this.player.drawable.show)
+    World.prototype.turnRight = function (player, callback) {
+        if (player.isDead || !player.drawable.show)
             return false;
 
-        var direction = this.player.direction;
+        var direction = player.direction;
         if (direction == Direction.UP) {
-            this.player.direction = Direction.RIGHT;
+            player.direction = Direction.RIGHT;
         } else if (direction == Direction.DOWN) {
-            this.player.direction = Direction.LEFT;
+            player.direction = Direction.LEFT;
         } else if (direction == Direction.LEFT) {
-            this.player.direction = Direction.UP;
+            player.direction = Direction.UP;
         } else if (direction == Direction.RIGHT) {
-            this.player.direction = Direction.DOWN;
+            player.direction = Direction.DOWN;
         } else {
             throw 'internal error: unhandled code branch';
         }
-        this.worldView.turnRight(callback);
+        this.worldView.turnRight(player.drawable, callback);
         return true;
     };
 
-    World.prototype.move = function (callback) {
-        var direction = this.player.direction;
+    World.prototype.move = function (player, callback) {
+        var direction = player.direction;
         if (direction == Direction.UP) {
-            return this.moveTop(callback);
+            return this.moveTop(player, callback);
         } else if (direction == Direction.DOWN) {
-            return this.moveBottom(callback);
+            return this.moveBottom(player, callback);
         } else if (direction == Direction.LEFT) {
-            return this.moveLeft(callback);
+            return this.moveLeft(player, callback);
         } else if (direction == Direction.RIGHT) {
-            return this.moveRight(callback);
+            return this.moveRight(player, callback);
         } else {
             throw 'internal error: unhandled code branch';
         }
     };
 
-    World.prototype.moveLeft = function (callback) {
-        return this.__move(this.player, this.player.u - 1, this.player.v, callback);
+    World.prototype.moveLeft = function (player, callback) {
+        return this.__move(player, player.u - 1, player.v, callback);
     };
 
-    World.prototype.moveRight = function (callback) {
-        return this.__move(this.player, this.player.u + 1, this.player.v, callback);
+    World.prototype.moveRight = function (player, callback) {
+        return this.__move(player, player.u + 1, player.v, callback);
     };
 
-    World.prototype.moveTop = function (callback) {
-        return this.__move(this.player, this.player.u, this.player.v - 1, callback);
+    World.prototype.moveTop = function (player, callback) {
+        return this.__move(player, player.u, player.v - 1, callback);
     };
 
-    World.prototype.moveBottom = function (callback) {
-        return this.__move(this.player, this.player.u, this.player.v + 1, callback);
+    World.prototype.moveBottom = function (player, callback) {
+        return this.__move(player, player.u, player.v + 1, callback);
     };
 
     World.prototype.__move = function (player, u, v, callback) {
@@ -124,10 +130,11 @@ G.World = (function (Tile, iterateEntries, Direction) {
         var canMove = this.domainGridHelper.canPlayerMove(player, u, v);
         if (!canMove) {
             var isAttack = false;
+            var currentLives = 0;
             var hitPromise;
             player.isDead = true;
-            this.worldView.remove(function () {
-                if (isAttack && self.lives <= 0) {
+            this.worldView.remove(player.drawable, function () {
+                if (isAttack && currentLives <= 0) {
                     if (hitPromise.isOver) {
                         self.__endMap();
                     } else {
@@ -136,24 +143,23 @@ G.World = (function (Tile, iterateEntries, Direction) {
                     return;
                 }
                 self.domainGridHelper.remove(player);
-                var newPlayer = self.player = {
-                    u: self.playerRespawn.u,
-                    v: self.playerRespawn.v,
-                    type: self.playerRespawn.type,
-                    direction: self.playerRespawn.direction,
-                    isDead: false
-                };
-                self.domainGridHelper.add(newPlayer);
-                self.worldView.add(newPlayer, callback);
+
+                player.u = self.spawnPoints[player.type].u;
+                player.v = self.spawnPoints[player.type].v;
+                player.direction = self.spawnPoints[player.type].direction;
+                player.isDead = false;
+
+                self.domainGridHelper.add(player);
+                self.worldView.add(player, callback);
             });
 
             var neighbor = this.domainGridHelper.getNeighbor(player);
             if (neighbor.type[0] == Tile.HOME) {
                 isAttack = true;
-                this.lives--;
-                hitPromise = this.worldView.hit();
+                this.homes[neighbor.type].lives--;
+                currentLives = this.homes[neighbor.type].lives;
+                hitPromise = this.worldView.hit(this.homes[neighbor.type].drawable);
             }
-
             return true;
         }
 
@@ -172,70 +178,125 @@ G.World = (function (Tile, iterateEntries, Direction) {
         }
 
         if (canMove) {
-            var change = this.domainGridHelper.movePlayer(player, u, v);
-            this.worldView.move(change, postMove);
+            this.domainGridHelper.movePlayer(player, u, v);
+            this.worldView.move(player, postMove);
         }
 
         return true;
     };
 
     World.prototype.__moveBelts = function () {
-        iterateEntries(this.__conveyorBelt, function (elem, key) {
-            if (elem.entity.isDead) {
+        iterateEntries(this.__conveyorBelt, function (beltItem, key) {
+            if (beltItem.entity.isDead) {
                 delete this.__conveyorBelt[key];
                 return;
             }
-            if (elem.type == Tile.BELT_UP) {
+            if (beltItem.type == Tile.BELT_UP) {
                 delete this.__conveyorBelt[key];
-                this.moveTop();
-            } else if (elem.type == Tile.BELT_UP_TURN_LEFT) {
+                this.moveTop(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_UP_TURN_LEFT) {
                 delete this.__conveyorBelt[key];
-                this.moveTop();
-                this.turnLeft();
-            } else if (elem.type == Tile.BELT_UP_TURN_RIGHT) {
+                this.moveTop(beltItem.entity);
+                this.turnLeft(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_UP_TURN_RIGHT) {
                 delete this.__conveyorBelt[key];
-                this.moveTop();
-                this.turnRight()
-            } else if (elem.type == Tile.BELT_DOWN) {
+                this.moveTop(beltItem.entity);
+                this.turnRight(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_DOWN) {
                 delete this.__conveyorBelt[key];
-                this.moveBottom();
-            } else if (elem.type == Tile.BELT_DOWN_TURN_LEFT) {
+                this.moveBottom(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_DOWN_TURN_LEFT) {
                 delete this.__conveyorBelt[key];
-                this.moveBottom();
-                this.turnLeft();
-            } else if (elem.type == Tile.BELT_DOWN_TURN_RIGHT) {
+                this.moveBottom(beltItem.entity);
+                this.turnLeft(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_DOWN_TURN_RIGHT) {
                 delete this.__conveyorBelt[key];
-                this.moveBottom();
-                this.turnRight();
-            } else if (elem.type == Tile.BELT_LEFT) {
+                this.moveBottom(beltItem.entity);
+                this.turnRight(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_LEFT) {
                 delete this.__conveyorBelt[key];
-                this.moveLeft();
-            } else if (elem.type == Tile.BELT_LEFT_TURN_LEFT) {
+                this.moveLeft(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_LEFT_TURN_LEFT) {
                 delete this.__conveyorBelt[key];
-                this.moveLeft();
-                this.turnLeft();
-            } else if (elem.type == Tile.BELT_LEFT_TURN_RIGHT) {
+                this.moveLeft(beltItem.entity);
+                this.turnLeft(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_LEFT_TURN_RIGHT) {
                 delete this.__conveyorBelt[key];
-                this.moveLeft();
-                this.turnRight();
-            } else if (elem.type == Tile.BELT_RIGHT) {
+                this.moveLeft(beltItem.entity);
+                this.turnRight(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_RIGHT) {
                 delete this.__conveyorBelt[key];
-                this.moveRight();
-            } else if (elem.type == Tile.BELT_RIGHT_TURN_LEFT) {
+                this.moveRight(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_RIGHT_TURN_LEFT) {
                 delete this.__conveyorBelt[key];
-                this.moveRight();
-                this.turnLeft();
-            } else if (elem.type == Tile.BELT_RIGHT_TURN_RIGHT) {
+                this.moveRight(beltItem.entity);
+                this.turnLeft(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_RIGHT_TURN_RIGHT) {
                 delete this.__conveyorBelt[key];
-                this.moveRight();
-                this.turnRight();
-            } else if (elem.type == Tile.BELT_TURN_RIGHT) {
-                this.turnRight();
-            } else if (elem.type == Tile.BELT_TURN_LEFT) {
-                this.turnLeft();
+                this.moveRight(beltItem.entity);
+                this.turnRight(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_TURN_RIGHT) {
+                this.turnRight(beltItem.entity);
+            } else if (beltItem.type == Tile.BELT_TURN_LEFT) {
+                this.turnLeft(beltItem.entity);
             }
         }, this);
     };
+
+    function isSame(playerControllerInfo) {
+        return this.type[1] == playerControllerInfo.slot;
+    }
+
+    function hasSlot(player) {
+        return this.__players.some(isSame, player);
+    }
+
+    function hasNoSlot(player) {
+        return !this.__players.some(isSame, player);
+    }
+
+    /** @this World */
+    function remove(player) {
+        this.domainGridHelper.remove(player);
+    }
+
+    function toDict(dict, player) {
+        dict[player.type] = player;
+        return dict;
+    }
+
+    function setDirection(player) {
+        var direction = player.type[2];
+        if (direction == 'U') {
+            player.direction = Direction.UP;
+        } else if (direction == 'D') {
+            player.direction = Direction.DOWN;
+        } else if (direction == 'L') {
+            player.direction = Direction.LEFT;
+        } else if (direction == 'R') {
+            player.direction = Direction.RIGHT;
+        }
+    }
+
+    function init(player) {
+        player.isDead = false;
+    }
+
+    function toSpawnDict(dict, player) {
+        dict[player.type] = {
+            u: player.u,
+            v: player.v,
+            type: player.type,
+            direction: player.direction
+        };
+        return dict
+    }
+
+    function toHomeDict(dict, home) {
+        dict[home.type] = home;
+        home.lives = 3;
+        return dict;
+    }
 
     return World;
 })(G.Tile, H5.iterateEntries, G.Direction);

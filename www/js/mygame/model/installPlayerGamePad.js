@@ -5,6 +5,8 @@ G.installPlayerGamePad = (function (Event) {
         var actionPressed = false;
 
         return events.subscribe(Event.GAME_PAD, function (gamePad) {
+            if (gamePad.index != playerController.player.slot)
+                return;
             if (gamePad.isAPressed() && !actionPressed) {
                 actionPressed = true;
                 playerController.handleAction();
