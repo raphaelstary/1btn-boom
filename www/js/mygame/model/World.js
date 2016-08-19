@@ -125,45 +125,14 @@ G.World = (function (Tile, iterateEntries, Direction) {
         if (player.isDead || !player.drawable.show)
             return false;
 
-        var self = this;
-
         var canMove = this.domainGridHelper.canPlayerMove(player, u, v);
         if (!canMove) {
-            var isAttack = false;
-            var currentLives = 0;
-            var hitPromise;
-            player.isDead = true;
-            this.worldView.remove(player.drawable, function () {
-                if (isAttack && currentLives <= 0) {
-                    if (hitPromise.isOver) {
-                        self.__endMap();
-                    } else {
-                        hitPromise.callback = self.__endMap;
-                    }
-                    return;
-                }
-                self.domainGridHelper.remove(player);
-
-                player.u = self.spawnPoints[player.type].u;
-                player.v = self.spawnPoints[player.type].v;
-                player.direction = self.spawnPoints[player.type].direction;
-                player.isDead = false;
-
-                self.domainGridHelper.add(player);
-                self.worldView.add(player, callback);
-            });
-
-            var neighbor = this.domainGridHelper.getNeighbor(player);
-            if (neighbor.type[0] == Tile.HOME) {
-                isAttack = true;
-                this.homes[neighbor.type].lives--;
-                currentLives = this.homes[neighbor.type].lives;
-                hitPromise = this.worldView.hit(this.homes[neighbor.type].drawable);
-            }
-            return true;
+            return this.__attack(player, callback);
         }
 
         delete this.__conveyorBelt[player.type];
+
+        var self = this;
 
         function postMove() {
             var belt = self.domainGridHelper.isOnBelt(player);
@@ -183,6 +152,52 @@ G.World = (function (Tile, iterateEntries, Direction) {
         }
 
         return true;
+    };
+
+    World.prototype.__attack = function (player, callback) {
+        this.__remove(player, callback);
+
+        var neighbor = this.domainGridHelper.getNeighbor(player);
+        if (neighbor.type[0] == Tile.HOME) {
+            var isOver = this.__hit(this.homes[neighbor.type]);
+            if (isOver)
+                this.__pause();
+
+        } else if (neighbor.type[0] == Tile.PLAYER) {
+            this.__remove(this.players[neighbor.type]);
+        }
+        return true;
+    };
+
+    World.prototype.__hit = function (home) {
+        home.lives--;
+        var hitPromise = this.worldView.hit(home.drawable);
+
+        if (home.lives <= 0) {
+            if (hitPromise.isOver) {
+                this.__endMap();
+            } else {
+                hitPromise.callback = this.__endMap;
+            }
+            return true;
+        }
+        return false;
+    };
+
+    World.prototype.__respawn = function (player, callback) {
+        player.u = this.spawnPoints[player.type].u;
+        player.v = this.spawnPoints[player.type].v;
+        player.direction = this.spawnPoints[player.type].direction;
+        player.isDead = false;
+
+        this.domainGridHelper.add(player);
+        this.worldView.add(player, callback);
+    };
+
+    World.prototype.__remove = function (player, callback) {
+        player.isDead = true;
+        this.domainGridHelper.remove(player);
+        this.worldView.remove(player.drawable, this.__respawn.bind(this, player, callback));
     };
 
     World.prototype.__moveBelts = function () {
