@@ -1,4 +1,4 @@
-G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, HitView) {
+G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, HitView, UI) {
     "use strict";
 
     function WorldView(stage, timer, gridViewHelper, shake) {
@@ -22,7 +22,7 @@ G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, H
 
     WorldView.prototype.drawLevel = function (players, homes, walls, backgroundTiles, callback) {
         var spacing = Transition.EASE_IN_SIN;
-        var yFn = wrap(-128);
+        var yFn = wrap(-UI.HEIGHT / 2);
         var self = this;
 
         var callbackCounter = new CallbackCounter(callback);
@@ -141,7 +141,7 @@ G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, H
 
     WorldView.prototype.add = function (entity, callback) {
         var spacing = Transition.EASE_IN_SIN;
-        var yFn = wrap(-128);
+        var yFn = wrap(-UI.HEIGHT / 2);
         var self = this;
 
         function dropIn(pair) {
@@ -170,4 +170,4 @@ G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, H
     };
 
     return WorldView;
-})(H5.Transition, H5.wrap, G.Image, H5.CallbackCounter, G.Tile, Math, G.HitView);
+})(H5.Transition, H5.wrap, G.Image, H5.CallbackCounter, G.Tile, Math, G.HitView, G.UI);

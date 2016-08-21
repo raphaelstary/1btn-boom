@@ -10,7 +10,7 @@ G.MyGameResources = (function (AtlasResourceHelper, DeviceInfo, userAgent, resol
         var isMobile = new DeviceInfo(userAgent, 1, 1, 1).isMobile;
         AtlasResourceHelper.register(resourceLoader, atlases, isMobile, resolveAtlasPaths);
 
-        // scenes = resourceLoader.addJSON(File.SCENES);
+        scenes = resourceLoader.addJSON(File.SCENES);
         maps = resourceLoader.addJSON(File.MAPS);
         // font = resourceLoader.addFont(File.GAME_FONT);
 
@@ -29,7 +29,8 @@ G.MyGameResources = (function (AtlasResourceHelper, DeviceInfo, userAgent, resol
 
         return {
             // services created with downloaded files
-            gfxCache: AtlasResourceHelper.processLowRez(atlases, 256, 256), // scenes: scenes,
+            gfxCache: AtlasResourceHelper.processLowRez(atlases, UI.WIDTH, UI.HEIGHT),
+            scenes: scenes,
             maps: maps
         };
     }

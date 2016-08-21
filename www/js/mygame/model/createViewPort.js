@@ -1,12 +1,13 @@
-G.createViewPort = (function (wrap) {
+G.createViewPort = (function (wrap, UI) {
     "use strict";
 
     function createViewPort(stage) {
-        var viewPort = stage.createRectangle(false).setPosition(wrap(128), wrap(128)).setWidth(wrap(256))
-            .setHeight(wrap(256));
+        var viewPort = stage.createRectangle(false).setPosition(wrap(UI.WIDTH / 2), wrap(UI.HEIGHT / 2))
+            .setWidth(wrap(UI.BOARD_WIDTH))
+            .setHeight(wrap(UI.BOARD_HEIGHT));
         viewPort.show = false;
         return viewPort;
     }
 
     return createViewPort;
-})(H5.wrap);
+})(H5.wrap, G.UI);

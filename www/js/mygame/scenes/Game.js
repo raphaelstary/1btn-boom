@@ -62,8 +62,8 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         this.shaker = new ScreenShaker(this.device);
         var players = [
             {
-                key: 'gamepad1',
-                type: 'gamepad',
+                key: H5.Key.SPACE,
+                type: 'keyboard',
                 slot: 0,
                 color: 'pink'
             }, {

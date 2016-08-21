@@ -1,7 +1,7 @@
 G.Image = {
     FLOOR: 'floor',
-    PLAYER: 'player',
-    HOME: 'home',
+    PLAYER: 'player-red',
+    HOME: 'home-red',
     BLACK: 'black',
     WHITE: 'white',
     WALL: 'wall',

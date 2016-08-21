@@ -1,9 +1,9 @@
-G.resolveAtlasPaths = (function (ATLAS_BASE_NAME, GFX_PATH, DATA_PATH, GFX_FORMAT, DATA_FORMAT) {
+G.resolveAtlasPaths = (function (ATLAS_BASE_NAME, GFX_PATH, DATA_PATH, GFX_FORMAT, DATA_FORMAT, UI) {
     "use strict";
 
     var atlases = [
         {
-            size: 256,
+            size: UI.HEIGHT,
             count: 1
         }
     ];
@@ -54,4 +54,4 @@ G.resolveAtlasPaths = (function (ATLAS_BASE_NAME, GFX_PATH, DATA_PATH, GFX_FORMA
     }
 
     return resolveAtlasPaths;
-})(G.File.ATLAS_BASE_NAME, G.File.GFX_PATH, G.File.DATA_PATH, G.File.GFX_FORMAT, G.File.DATA_FORMAT);
+})(G.File.ATLAS_BASE_NAME, G.File.GFX_PATH, G.File.DATA_PATH, G.File.GFX_FORMAT, G.File.DATA_FORMAT, G.UI);
