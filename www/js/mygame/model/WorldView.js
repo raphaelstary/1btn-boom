@@ -141,8 +141,8 @@ G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, H
             .setDuration(this.moveSpeed);
     };
 
-    WorldView.prototype.remove = function (entity, isHome, callback) {
-        this.explode(entity.drawable, isHome, function () {
+    WorldView.prototype.remove = function (entity, isHome, attacker, callback) {
+        this.explode(entity.drawable, isHome, attacker, function () {
             entity.entity.remove();
             entity.drawable.remove();
             if (callback)
@@ -177,9 +177,9 @@ G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, H
         dropIn(this.__createEntity(entity, entity.type[1] == 0 ? Image.PLAYER_1 : Image.PLAYER_2));
     };
 
-    WorldView.prototype.explode = function (drawable, isHome, callback) {
+    WorldView.prototype.explode = function (drawable, isHome, attacker, callback) {
         // drawable.animate(Image.EXPLOSION, Image.EXPLOSION_FRAMES, false).setCallback(callback);
-        this.__shake(isHome);
+        this.__shake(isHome, attacker);
         this.timer.doLater(callback, 10);
     };
 

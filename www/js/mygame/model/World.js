@@ -242,12 +242,14 @@ G.World = (function (Tile, iterateEntries, Direction, Players, Date) {
 
     World.prototype.__remove = function (player, isHome, callback, silentRemove) {
         player.isDead = true;
-        player.lastDeath = Date.now();
+        player.lastDeath = Date.now() + 16;
         this.domainGridHelper.remove(player);
         if (silentRemove) {
             this.worldView.silentRemove(player, this.__respawn.bind(this, player, callback));
         } else {
-            this.worldView.remove(player, isHome, this.__respawn.bind(this, player, callback));
+            var type = player.type[1];
+            this.worldView.remove(player, isHome, 'p' + (parseInt(type) + 1),
+                this.__respawn.bind(this, player, callback));
         }
     };
 

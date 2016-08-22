@@ -1,5 +1,5 @@
 G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wrap, Event, ScreenShaker, Camera,
-    createViewPort) {
+    createViewPort, UI) {
     "use strict";
 
     function Game(services, map) {
@@ -7,6 +7,7 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         this.events = services.events;
         this.stage = services.stage;
         this.timer = services.timer;
+        this.screen = services.scaledScreen;
 
         this.map = map;
 
@@ -89,9 +90,41 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         var viewPort = createViewPort(this.stage);
         var camera = new Camera(viewPort);
         this.shaker.add(viewPort);
-        function shake(isHome) {
+
+        var colors = {
+            p1: UI.RED,
+            p2: UI.BLUE
+        };
+
+        var extracted = function (color) {
+            self.screen.style.backgroundColor = color;
+            self.timer.doLater(function () {
+                self.screen.style.backgroundColor = UI.BACKGROUND_COLOR;
+                self.timer.doLater(function () {
+                    self.screen.style.backgroundColor = color;
+                    self.timer.doLater(function () {
+                        self.screen.style.backgroundColor = UI.BACKGROUND_COLOR;
+                        self.timer.doLater(function () {
+                            self.screen.style.backgroundColor = color;
+                            self.timer.doLater(function () {
+                                self.screen.style.backgroundColor = UI.BACKGROUND_COLOR;
+                                self.timer.doLater(function () {
+                                    self.screen.style.backgroundColor = color;
+                                    self.timer.doLater(function () {
+                                        self.screen.style.backgroundColor = UI.BACKGROUND_COLOR;
+                                    }, 2);
+                                }, 2);
+                            }, 2);
+                        }, 2);
+                    }, 2);
+                }, 2);
+            }, 2);
+        };
+
+        function shake(isHome, attacker) {
             if (isHome) {
                 self.shaker.startBigShake();
+                extracted(colors[attacker]);
             } else {
                 self.shaker.startSmallShake();
             }
@@ -143,4 +176,4 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
 
     return Game;
 })(G.PlayFactory, G.installPlayerKeyBoard, G.installPlayerGamePad, H5.wrap, H5.Event, H5.FixRezScreenShaker, G.Camera,
-    G.createViewPort);
+    G.createViewPort, G.UI);
