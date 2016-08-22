@@ -1,8 +1,6 @@
 G.HitView = (function (wrap, Transition, Image) {
     "use strict";
 
-    var Z_INDEX = 6;
-
     function HitView(stage, timer, drawable) {
         this.stage = stage;
         this.timer = timer;
@@ -12,12 +10,10 @@ G.HitView = (function (wrap, Transition, Image) {
     }
 
     HitView.prototype.hit = function () {
-        var white = this.stage.createImage(Image.WHITE)
-            .setPosition(wrap(this.drawable.x), wrap(this.drawable.y)).setZIndex(Z_INDEX);
-        var black = this.stage.createImage(Image.BLACK)
-            .setPosition(wrap(this.drawable.x), wrap(this.drawable.y)).setZIndex(Z_INDEX + 1).setAlpha(0);
+        var oldGfx = this.drawable.data;
+        this.drawable.data = this.stage.getGraphic(Image.WHITE);
 
-        black.opacityPattern([
+        this.drawable.opacityPattern([
             {
                 value: 1,
                 duration: this.fadeInSpeed,
@@ -29,9 +25,11 @@ G.HitView = (function (wrap, Transition, Image) {
             }
         ], true);
 
+        var self = this;
         this.timer.doLater(function () {
-            white.remove();
-            black.remove();
+            self.drawable.pause();
+            self.drawable.setAlpha(1);
+            self.drawable.data = oldGfx;
             if (callback)
                 callback();
         }, 30);
