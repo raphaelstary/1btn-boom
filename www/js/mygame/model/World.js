@@ -1,4 +1,4 @@
-G.World = (function (Tile, iterateEntries, Direction) {
+G.World = (function (Tile, iterateEntries, Direction, Players, Date) {
     "use strict";
 
     function World(worldView, domainGridHelper, endMap, pause, resume, players, camera, hearts) {
@@ -29,29 +29,23 @@ G.World = (function (Tile, iterateEntries, Direction) {
     };
 
     World.prototype.updateCamera = function () {
-        this.tiles.forEach(function (tile) {
-            this.camera.calcScreenPosition(tile.entity, tile.drawable);
-        }, this);
+        this.tiles.forEach(Players.updatePosition, this);
     };
 
     World.prototype.init = function (callback) {
         var spawnTiles = this.domainGridHelper.getPlayers();
-        spawnTiles.filter(hasNoSlot, this).forEach(remove, this);
-        var players = spawnTiles.filter(hasSlot, this);
-        players.forEach(init);
-        players.forEach(setDirection);
-        players.forEach(function (player) {
-            this.__players.filter(isSame, player).forEach(function (playerControllerInfo) {
-                playerControllerInfo.tileType = player.type;
-            });
-        }, this);
+        spawnTiles.filter(Players.hasNoSlot, this).forEach(Players.remove, this);
+        var players = spawnTiles.filter(Players.hasSlot, this);
+        players.forEach(Players.init);
+        players.forEach(Players.setDirection);
+        players.forEach(Players.setTileType, this);
 
-        this.spawnPoints = players.reduce(toSpawnDict, {});
-        this.players = players.reduce(toDict, {});
+        this.spawnPoints = players.reduce(Players.toSpawnDict, {});
+        this.players = players.reduce(Players.toDict, {});
         var homeBaseTiles = this.domainGridHelper.getHomes();
-        homeBaseTiles.filter(hasNoSlot, this).forEach(remove, this);
-        var homes = homeBaseTiles.filter(hasSlot, this);
-        this.homes = homes.reduce(toHomeDict, {
+        homeBaseTiles.filter(Players.hasNoSlot, this).forEach(Players.remove, this);
+        var homes = homeBaseTiles.filter(Players.hasSlot, this);
+        this.homes = homes.reduce(Players.toHomeDict, {
             H0: [],
             H1: []
         });
@@ -160,6 +154,7 @@ G.World = (function (Tile, iterateEntries, Direction) {
             var belt = self.domainGridHelper.isOnBelt(player);
             if (belt) {
                 self.__conveyorBelt[player.type] = {
+                    time: Date.now(),
                     type: belt,
                     entity: player
                 }
@@ -191,13 +186,15 @@ G.World = (function (Tile, iterateEntries, Direction) {
         return true;
     };
 
+    World.prototype.__hitHome = function (home, index) {
+        home.lives--;
+        if (index !== 0)
+            this.worldView.hit(home.drawable);
+    };
+
     World.prototype.__hit = function (homes) {
 
-        homes.forEach(function (home, index) {
-            home.lives--;
-            if (index !== 0)
-                this.worldView.hit(home.drawable);
-        }, this);
+        homes.forEach(this.__hitHome, this);
 
         var home = homes[0];
 
@@ -243,123 +240,70 @@ G.World = (function (Tile, iterateEntries, Direction) {
 
     World.prototype.__remove = function (player, callback) {
         player.isDead = true;
+        player.lastDeath = Date.now();
         this.domainGridHelper.remove(player);
         this.worldView.remove(player, this.__respawn.bind(this, player, callback));
     };
 
     World.prototype.__moveBelts = function () {
-        iterateEntries(this.__conveyorBelt, function (beltItem, key) {
-            if (beltItem.entity.isDead) {
-                delete this.__conveyorBelt[key];
-                return;
-            }
-            if (beltItem.type == Tile.BELT_UP) {
-                delete this.__conveyorBelt[key];
-                this.moveTop(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_UP_TURN_LEFT) {
-                delete this.__conveyorBelt[key];
-                this.moveTop(beltItem.entity);
-                this.turnLeft(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_UP_TURN_RIGHT) {
-                delete this.__conveyorBelt[key];
-                this.moveTop(beltItem.entity);
-                this.turnRight(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_DOWN) {
-                delete this.__conveyorBelt[key];
-                this.moveBottom(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_DOWN_TURN_LEFT) {
-                delete this.__conveyorBelt[key];
-                this.moveBottom(beltItem.entity);
-                this.turnLeft(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_DOWN_TURN_RIGHT) {
-                delete this.__conveyorBelt[key];
-                this.moveBottom(beltItem.entity);
-                this.turnRight(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_LEFT) {
-                delete this.__conveyorBelt[key];
-                this.moveLeft(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_LEFT_TURN_LEFT) {
-                delete this.__conveyorBelt[key];
-                this.moveLeft(beltItem.entity);
-                this.turnLeft(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_LEFT_TURN_RIGHT) {
-                delete this.__conveyorBelt[key];
-                this.moveLeft(beltItem.entity);
-                this.turnRight(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_RIGHT) {
-                delete this.__conveyorBelt[key];
-                this.moveRight(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_RIGHT_TURN_LEFT) {
-                delete this.__conveyorBelt[key];
-                this.moveRight(beltItem.entity);
-                this.turnLeft(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_RIGHT_TURN_RIGHT) {
-                delete this.__conveyorBelt[key];
-                this.moveRight(beltItem.entity);
-                this.turnRight(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_TURN_RIGHT) {
-                this.turnRight(beltItem.entity);
-            } else if (beltItem.type == Tile.BELT_TURN_LEFT) {
-                this.turnLeft(beltItem.entity);
-            }
-        }, this);
+        iterateEntries(this.__conveyorBelt, this.__moveBelt, this);
     };
 
-    function isSame(playerControllerInfo) {
-        return this.type[1] == playerControllerInfo.slot;
-    }
-
-    function hasSlot(player) {
-        return this.__players.some(isSame, player);
-    }
-
-    function hasNoSlot(player) {
-        return !this.__players.some(isSame, player);
-    }
-
-    /** @this World */
-    function remove(player) {
-        this.domainGridHelper.remove(player);
-    }
-
-    function toDict(dict, player) {
-        dict[player.type] = player;
-        return dict;
-    }
-
-    function setDirection(player) {
-        var direction = player.type[2];
-        if (direction == 'U') {
-            player.direction = Direction.UP;
-        } else if (direction == 'D') {
-            player.direction = Direction.DOWN;
-        } else if (direction == 'L') {
-            player.direction = Direction.LEFT;
-        } else if (direction == 'R') {
-            player.direction = Direction.RIGHT;
+    World.prototype.__moveBelt = function (beltItem, key) {
+        if (beltItem.entity.isDead || beltItem.time <= beltItem.entity.lastDeath) {
+            delete this.__conveyorBelt[key];
+            return;
         }
-    }
-
-    function init(player) {
-        player.isDead = false;
-    }
-
-    function toSpawnDict(dict, player) {
-        dict[player.type] = {
-            u: player.u,
-            v: player.v,
-            type: player.type,
-            direction: player.direction
-        };
-        return dict
-    }
-
-    function toHomeDict(dict, home) {
-        home.lives = 3;
-        dict[home.type].push(home);
-
-        return dict;
-    }
+        if (beltItem.type == Tile.BELT_UP) {
+            delete this.__conveyorBelt[key];
+            this.moveTop(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_UP_TURN_LEFT) {
+            delete this.__conveyorBelt[key];
+            this.moveTop(beltItem.entity);
+            this.turnLeft(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_UP_TURN_RIGHT) {
+            delete this.__conveyorBelt[key];
+            this.moveTop(beltItem.entity);
+            this.turnRight(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_DOWN) {
+            delete this.__conveyorBelt[key];
+            this.moveBottom(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_DOWN_TURN_LEFT) {
+            delete this.__conveyorBelt[key];
+            this.moveBottom(beltItem.entity);
+            this.turnLeft(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_DOWN_TURN_RIGHT) {
+            delete this.__conveyorBelt[key];
+            this.moveBottom(beltItem.entity);
+            this.turnRight(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_LEFT) {
+            delete this.__conveyorBelt[key];
+            this.moveLeft(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_LEFT_TURN_LEFT) {
+            delete this.__conveyorBelt[key];
+            this.moveLeft(beltItem.entity);
+            this.turnLeft(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_LEFT_TURN_RIGHT) {
+            delete this.__conveyorBelt[key];
+            this.moveLeft(beltItem.entity);
+            this.turnRight(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_RIGHT) {
+            delete this.__conveyorBelt[key];
+            this.moveRight(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_RIGHT_TURN_LEFT) {
+            delete this.__conveyorBelt[key];
+            this.moveRight(beltItem.entity);
+            this.turnLeft(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_RIGHT_TURN_RIGHT) {
+            delete this.__conveyorBelt[key];
+            this.moveRight(beltItem.entity);
+            this.turnRight(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_TURN_RIGHT) {
+            this.turnRight(beltItem.entity);
+        } else if (beltItem.type == Tile.BELT_TURN_LEFT) {
+            this.turnLeft(beltItem.entity);
+        }
+    };
 
     return World;
-})(G.Tile, H5.iterateEntries, G.Direction);
+})(G.Tile, H5.iterateEntries, G.Direction, G.Players, Date);
