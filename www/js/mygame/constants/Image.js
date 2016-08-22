@@ -1,5 +1,5 @@
 G.Image = {
-    FLOOR_BLUE_GREY: 'floor-blue-grey',
+    FLOOR_BLUE_GREY: 'floor-green-grey',
     FLOOR_BLUE_GREEN: 'floor-blue-green',
     FLOOR_GREEN_GREY: 'floor-green-grey',
     FLOOR: 'floor',

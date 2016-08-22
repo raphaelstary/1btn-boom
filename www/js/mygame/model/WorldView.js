@@ -21,19 +21,22 @@ G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, H
     };
 
     WorldView.prototype.drawLevel = function (players, homes, walls, backgroundTiles, callback) {
-        var spacing = Transition.EASE_IN_SIN;
+        var spacing = Transition.EASE_OUT_BOUNCE;
         var yFn = wrap(-UI.HEIGHT / 2);
         var self = this;
 
         var callbackCounter = new CallbackCounter(callback);
 
         function dropIn(pair) {
+            var later = range(1, 30);
             pair.drawable.show = false;
-            pair.entity.moveFrom(wrap(pair.entity, 'x'), yFn).setDuration(self.dropInSpeed)
-                .setSpacing(spacing).setCallback(callbackCounter.register());
+            self.timer.doLater(function () {
+                pair.entity.moveFrom(wrap(pair.entity, 'x'), yFn).setDuration(self.dropInSpeed * 2)
+                    .setSpacing(spacing).setCallback(callbackCounter.register());
+            }, later);
             self.timer.doLater(function () {
                 pair.drawable.show = true;
-            }, 5);
+            }, later + 5);
             return pair;
         }
 
