@@ -11,7 +11,7 @@ G.installMyScenes = (function (Scenes, Game, MVVMScene, Scene, Start, GameOver) 
 
         scenes.add(startScene.show.bind(startScene));
 
-        var game = new Game(services, services.maps['map_test']);
+        var game = new Game(services, services.maps['map_2']);
         var gameScene = new MVVMScene(services, services.scenes[Scene.GAME], game, Scene.GAME);
 
         scenes.add(gameScene.show.bind(gameScene));

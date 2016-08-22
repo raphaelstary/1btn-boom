@@ -1,4 +1,4 @@
-G.World = (function (Tile, iterateEntries, Direction, Players, Date) {
+G.World = (function (Tile, iterateEntries, Direction, Players, Date, parseInt) {
     "use strict";
 
     function World(worldView, domainGridHelper, endMap, pause, resume, players, camera, hearts) {
@@ -314,4 +314,4 @@ G.World = (function (Tile, iterateEntries, Direction, Players, Date) {
     };
 
     return World;
-})(G.Tile, H5.iterateEntries, G.Direction, G.Players, Date);
+})(G.Tile, H5.iterateEntries, G.Direction, G.Players, Date, parseInt);
