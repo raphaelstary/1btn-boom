@@ -29,12 +29,11 @@ G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, H
 
         function dropIn(pair) {
             pair.drawable.show = false;
+            pair.entity.moveFrom(wrap(pair.entity, 'x'), yFn).setDuration(self.dropInSpeed)
+                .setSpacing(spacing).setCallback(callbackCounter.register());
             self.timer.doLater(function () {
                 pair.drawable.show = true;
-                pair.entity.moveFrom(wrap(pair.entity, 'x'), yFn).setDuration(self.dropInSpeed)
-                    .setSpacing(spacing).setCallback(callbackCounter.register());
-            }, 1);
-
+            }, 5);
             return pair;
         }
 
@@ -130,13 +129,22 @@ G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, H
             .setDuration(this.moveSpeed);
     };
 
-    WorldView.prototype.remove = function (entity, callback) {
-        this.explode(entity.drawable, function () {
+    WorldView.prototype.remove = function (entity, isHome, callback) {
+        this.explode(entity.drawable, isHome, function () {
             entity.entity.remove();
             entity.drawable.remove();
             if (callback)
                 callback();
         });
+    };
+
+    WorldView.prototype.silentRemove = function (entity, callback) {
+        this.timer.doLater(function () {
+            entity.entity.remove();
+            entity.drawable.remove();
+            if (callback)
+                callback();
+        }, 10);
     };
 
     WorldView.prototype.add = function (entity, callback) {
@@ -146,21 +154,20 @@ G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, H
 
         function dropIn(pair) {
             pair.drawable.show = false;
+            pair.entity.moveFrom(wrap(pair.entity, 'x'), yFn).setDuration(self.dropInSpeed)
+                .setSpacing(spacing).setCallback(callback);
             self.timer.doLater(function () {
                 pair.drawable.show = true;
-                pair.entity.moveFrom(wrap(pair.entity, 'x'), yFn).setDuration(self.dropInSpeed)
-                    .setSpacing(spacing).setCallback(callback);
-            }, 1);
-
+            }, 5);
             return pair;
         }
 
         dropIn(this.__createEntity(entity, entity.type[1] == 0 ? Image.PLAYER_1 : Image.PLAYER_2));
     };
 
-    WorldView.prototype.explode = function (drawable, callback) {
+    WorldView.prototype.explode = function (drawable, isHome, callback) {
         // drawable.animate(Image.EXPLOSION, Image.EXPLOSION_FRAMES, false).setCallback(callback);
-        this.__shake();
+        this.__shake(isHome);
         this.timer.doLater(callback, 10);
     };
 

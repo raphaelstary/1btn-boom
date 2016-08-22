@@ -172,16 +172,18 @@ G.World = (function (Tile, iterateEntries, Direction, Players, Date) {
     };
 
     World.prototype.__attack = function (player, callback) {
-        this.__remove(player, callback);
-
         var neighbor = this.domainGridHelper.getNeighbor(player);
-        if (neighbor.type[0] == Tile.HOME) {
+        var isHome = neighbor.type[0] == Tile.HOME;
+
+        this.__remove(player, isHome, callback);
+
+        if (isHome) {
             var isOver = this.__hit(this.homes[neighbor.type]);
             if (isOver)
                 this.__pause();
 
         } else if (neighbor.type[0] == Tile.PLAYER) {
-            this.__remove(this.players[neighbor.type]);
+            this.__remove(this.players[neighbor.type], isHome, undefined, true);
         }
         return true;
     };
@@ -238,11 +240,15 @@ G.World = (function (Tile, iterateEntries, Direction, Players, Date) {
         this.worldView.add(player, callback);
     };
 
-    World.prototype.__remove = function (player, callback) {
+    World.prototype.__remove = function (player, isHome, callback, silentRemove) {
         player.isDead = true;
         player.lastDeath = Date.now();
         this.domainGridHelper.remove(player);
-        this.worldView.remove(player, this.__respawn.bind(this, player, callback));
+        if (silentRemove) {
+            this.worldView.silentRemove(player, this.__respawn.bind(this, player, callback));
+        } else {
+            this.worldView.remove(player, isHome, this.__respawn.bind(this, player, callback));
+        }
     };
 
     World.prototype.__moveBelts = function () {

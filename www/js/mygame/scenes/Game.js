@@ -89,8 +89,12 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         var viewPort = createViewPort(this.stage);
         var camera = new Camera(viewPort);
         this.shaker.add(viewPort);
-        function shake() {
-            self.shaker.startBigShake();
+        function shake(isHome) {
+            if (isHome) {
+                self.shaker.startBigShake();
+            } else {
+                self.shaker.startSmallShake();
+            }
         }
 
         this.world = PlayFactory.createWorld(this.stage, this.timer, this.device, this.map, endMap,
