@@ -79,7 +79,8 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         function shake() {
             self.shaker.startBigShake();
         }
-        this.world = PlayFactory.createWorld(this.stage, this.timer, this.device, this.map, 0, 0, endMap,
+
+        this.world = PlayFactory.createWorld(this.stage, this.timer, this.device, this.map, endMap,
             this.__pause.bind(this), this.__resume.bind(this), shake, players, camera);
 
         this.world.init(function () {
