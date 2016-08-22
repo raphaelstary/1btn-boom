@@ -50,14 +50,27 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
 
         var self = this;
 
-        function endMap() {
+        function endMap(p) {
             if (self.__itIsOver)
                 return;
 
             self.__pause();
             self.__itIsOver = true;
-            self.nextScene({});
+            self.nextScene(p);
         }
+
+        var hearts = {
+            p1: {
+                1: this.p1Heart1,
+                2: this.p1Heart2,
+                3: this.p1Heart3
+            },
+            p2: {
+                1: this.p2Heart1,
+                2: this.p2Heart2,
+                3: this.p2Heart3
+            }
+        };
 
         this.shaker = new ScreenShaker(this.device);
         var players = [
@@ -67,8 +80,8 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
                 slot: 0,
                 color: 'pink'
             }, {
-                key: 'gamepad2',
-                type: 'gamepad',
+                key: H5.Key.ENTER,
+                type: 'keyboard',
                 slot: 1,
                 color: 'blue'
             }
@@ -81,7 +94,7 @@ G.Game = (function (PlayFactory, installPlayerKeyBoard, installPlayerGamePad, wr
         }
 
         this.world = PlayFactory.createWorld(this.stage, this.timer, this.device, this.map, endMap,
-            this.__pause.bind(this), this.__resume.bind(this), shake, players, camera);
+            this.__pause.bind(this), this.__resume.bind(this), shake, players, camera, hearts);
 
         this.world.init(function () {
             if (self.__itIsOver)

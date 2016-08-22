@@ -1,4 +1,4 @@
-G.installMyScenes = (function (Scenes, Game, MVVMScene, Scene, Start) {
+G.installMyScenes = (function (Scenes, Game, MVVMScene, Scene, Start, GameOver) {
     "use strict";
 
     function installMyScenes(services) {
@@ -16,8 +16,13 @@ G.installMyScenes = (function (Scenes, Game, MVVMScene, Scene, Start) {
 
         scenes.add(gameScene.show.bind(gameScene));
 
+        var gameOver = new GameOver(services);
+        var gameOverScene = new MVVMScene(services, services.scenes[Scene.GAME_OVER], gameOver, Scene.GAME_OVER);
+
+        scenes.add(gameOverScene.show.bind(gameOverScene));
+
         return scenes;
     }
 
     return installMyScenes;
-})(H5.Scenes, G.Game, H5.MVVMScene, G.Scene, G.Start);
+})(H5.Scenes, G.Game, H5.MVVMScene, G.Scene, G.Start, G.GameOver);

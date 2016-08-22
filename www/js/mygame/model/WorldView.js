@@ -39,11 +39,11 @@ G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, H
         }
 
         players.forEach(function (player) {
-            dropIn(this.__createEntity(player, Image.PLAYER));
+            dropIn(this.__createEntity(player, player.type[1] == 0 ? Image.PLAYER_1 : Image.PLAYER_2));
         }, this);
 
         homes.forEach(function (home) {
-            dropIn(this.__createEntity(home, Image.HOME));
+            dropIn(this.__createEntity(home, home.type[1] == 0 ? Image.HOME_1 : Image.HOME_2));
         }, this);
 
         walls.forEach(function (wall) {
@@ -155,7 +155,7 @@ G.WorldView = (function (Transition, wrap, Image, CallbackCounter, Tile, Math, H
             return pair;
         }
 
-        dropIn(this.__createEntity(entity, Image.PLAYER));
+        dropIn(this.__createEntity(entity, entity.type[1] == 0 ? Image.PLAYER_1 : Image.PLAYER_2));
     };
 
     WorldView.prototype.explode = function (drawable, callback) {

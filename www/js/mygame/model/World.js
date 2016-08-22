@@ -1,7 +1,7 @@
 G.World = (function (Tile, iterateEntries, Direction) {
     "use strict";
 
-    function World(worldView, domainGridHelper, endMap, pause, resume, players, camera) {
+    function World(worldView, domainGridHelper, endMap, pause, resume, players, camera, hearts) {
         this.worldView = worldView;
         this.domainGridHelper = domainGridHelper;
 
@@ -14,6 +14,8 @@ G.World = (function (Tile, iterateEntries, Direction) {
 
         this.__players = players;
         this.camera = camera;
+
+        this.hearts = hearts;
     }
 
     World.prototype.update = function () {
@@ -49,7 +51,10 @@ G.World = (function (Tile, iterateEntries, Direction) {
         var homeBaseTiles = this.domainGridHelper.getHomes();
         homeBaseTiles.filter(hasNoSlot, this).forEach(remove, this);
         var homes = homeBaseTiles.filter(hasSlot, this);
-        this.homes = homes.reduce(toHomeDict, {});
+        this.homes = homes.reduce(toHomeDict, {
+            H0: [],
+            H1: []
+        });
 
         var walls = this.domainGridHelper.getWalls();
         var backgroundTiles = this.domainGridHelper.getBackgroundTiles();
@@ -61,6 +66,10 @@ G.World = (function (Tile, iterateEntries, Direction) {
         this.tiles.push.apply(this.tiles, backgroundTiles);
 
         this.worldView.drawLevel(players, homes, walls, backgroundTiles, callback);
+    };
+
+    World.prototype.preDestroy = function () {
+        this.worldView.preDestroy(this.tiles);
     };
 
     World.prototype.turnLeft = function (player, callback) {
@@ -182,15 +191,40 @@ G.World = (function (Tile, iterateEntries, Direction) {
         return true;
     };
 
-    World.prototype.__hit = function (home) {
-        home.lives--;
+    World.prototype.__hit = function (homes) {
+
+        homes.forEach(function (home, index) {
+            home.lives--;
+            if (index !== 0)
+                this.worldView.hit(home.drawable);
+        }, this);
+
+        var home = homes[0];
+
+        if (home.type[1] == 0) {
+            this.hearts.p1[home.lives + 1].remove();
+        } else {
+            this.hearts.p2[home.lives + 1].remove();
+        }
+
         var hitPromise = this.worldView.hit(home.drawable);
 
         if (home.lives <= 0) {
             if (hitPromise.isOver) {
-                this.__endMap();
+                if (home.type[1] == 0) {
+                    this.__endMap('p2');
+                } else {
+                    this.__endMap('p1');
+                }
             } else {
-                hitPromise.callback = this.__endMap;
+                var self = this;
+                hitPromise.callback = function () {
+                    if (home.type[1] == 0) {
+                        self.__endMap('p2');
+                    } else {
+                        self.__endMap('p1');
+                    }
+                }
             }
             return true;
         }
@@ -321,8 +355,9 @@ G.World = (function (Tile, iterateEntries, Direction) {
     }
 
     function toHomeDict(dict, home) {
-        dict[home.type] = home;
         home.lives = 3;
+        dict[home.type].push(home);
+
         return dict;
     }
 
