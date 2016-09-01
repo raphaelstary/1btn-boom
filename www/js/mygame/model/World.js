@@ -19,7 +19,7 @@ G.World = (function (Tile, iterateEntries, Direction, Players, Date, parseInt) {
     }
 
     World.prototype.update = function () {
-        if (this.__ticker % 60 === 0) {
+        if (this.__ticker % 30 === 0) {
 
             this.__moveBelts();
 
